@@ -1,16 +1,20 @@
 let gameBoard = (function(){
-    let _gameBoard = ["", "", "", "", "", "", "", "", ""];
+    // let _gameBoard = ["", "", "", "", "", "", "", "", ""];
+    let _gameBoard = ["x", "o", "x", "o", "x", "o", "", "o", ""]; //test
     /*DESTRUCTURE THE GAMEBOARD INTO ROWS
-    let [a, b, c] = _gameBoard;
-    let [d, e, f] = _gameBoard;
-    let [g, h, i] = _gameBoard;
+    let [a1, b2, c2] = _gameBoard;
+    let [d3, e4, f5] = _gameBoard;
+    let [g6, h7, i8] = _gameBoard;
     [a, d, g] = _gameBoard;
     [b, e, h] = _gameBoard;
     [c, f, i] = _gameBoard;
     [a, e, i] = _gameBoard;
     [c, e, g] = _gameBoard;*/
     return {
-        chooseCell: function(cell, token){
+        checkCell: function(cell){
+            return _gameBoard[cell];
+        },
+        chooseCell: function(cell, token){ //claimCell instead?
             return _gameBoard[cell] = token;
         },
         getGameBoard: function() {
@@ -48,24 +52,18 @@ let gameBoard = (function(){
             [c, e, g] = _gameBoard;
             return [c, e, g];
         },
+        resetBoard: function() {
+            return _gameBoard = ["", "", "", "", "", "", "", "", ""];
+        }
     };
 }());
-
-// console.log(gameBoard.getGameBoard()); //returns array of empty strings
-// console.log(gameBoard.chooseCell(4, 'o')); //returns 'o'
-// console.log(gameBoard); //returns updated array
-console.log(gameBoard.chooseCell(0, 'x'));
-console.log(gameBoard.chooseCell(5, 'o'));
-console.log(gameBoard.getTopRow());
 
 let players = (function(){
     function createPlayer(name, token){
         return {player: name, token: token}
     }
-
-    const _playerX = createPlayer("playerX", "X");
-    const _playerO = createPlayer("playerO", "O");
-
+    const _playerX = createPlayer("playerX", "x");
+    const _playerO = createPlayer("playerO", "o");
     return {
         getPlayerX: function(){
             return _playerX;
@@ -76,53 +74,156 @@ let players = (function(){
     }
 }());
 
-// console.log(players.getPlayerX());
-// console.log(players.getPlayerO());
-// console.log(players);
-
-let gameFlow = function(){
-    let _whoseTurn = players.getPlayerX();
-    console.log(_whoseTurn);
+let gameController = (function(){
+    let _activePlayer;
     let _gameOver = false;
+    let _matchingRow = false;
+    let _winner;
+    let _tie = false;
+    let _token;
 
-    function takeTurn(){
-        gameBoard.chooseCell(cell, token);
-        (_whoseTurn === players.getPlayerX()) ? 
-            _whoseTurn === players.getPlayerO() :
-            _whoseTurn === players.getPlayerX();
+    function announceActivePlayer(){
+        if (_activePlayer === players.getPlayerX()) {
+            _token = 'x';
+            console.log("It's Player X's turn");
+        } else {
+            _token = 'o';
+            console.log("It's Player O's turn");
+        };
     }
-    // 3. gameBoard array
-    //     TOP ROW: 0  1   2
-    //     MID ROW: 3  4   5
-    //     BTM ROW: 6  7   8
+
+    function announceGameOver(_winner, _tie){
+        console.log('GAME OVER');
+        if (_tie === true) {
+            console.log(`Oh cool, a tie`);
+        } else {
+            console.log(`${_winner} wins!`);
+        }
+    }
 
     function checkForMatches(array){
-        
-    }
-
-    function checkWin(){
-    // DEFINE checkForWin function
-    // ACCESS gameBoard
-    // IF (top row OR mid row OR btm row OR 
-        gameBoard.getTopRow().forEach(cell) => {
-
+        if (array[0] !== '' 
+            && array[0] === array[1] 
+            && array[0] === array[2]) {
+            _matchingRow = true;
         }
-    //     left col OR mid col OR rgt col OR
-    //     diag OR diag2) tokens match THEN
-        
-    //     SET gameOver to true
-    //     RETURN winning player
-
-    // ELSE IF all tokens have been placed AND no matches THEN
-    //     SET gameOver to true
-    //     RETURN tie
-    // ELSE gameOver remains false
-    // END checkForWin
+        if (_matchingRow === true && array[0] === 'x'){ // can these two if statements be condensed by referring to the player token instead of explicitly stating the tokens over two statements?
+            _winner = players.getPlayerX();
+        } else if (_matchingRow === true && array[0] === 'o'){
+            _winner = players.getPlayerO();
+        }
+        return _matchingRow;
     }
 
-}
+    function checkForGameOver(){
+       if (_matchingRow === false){
+            checkForMatches(gameBoard.getTopRow());
+            checkForMatches(gameBoard.getMidRow());
+            checkForMatches(gameBoard.getBtmRow());
+            checkForMatches(gameBoard.getLftCol());
+            checkForMatches(gameBoard.getMidCol());
+            checkForMatches(gameBoard.getRgtCol());
+            checkForMatches(gameBoard.getLftDiag());
+            checkForMatches(gameBoard.getRgtDiag());
+            for (let i = 0; i < gameBoard.getGameBoard.length; i++){
+                if (gameBoard.getGameBoard[i] === '') {
+                    break;
+                } else {
+                    _gameOver = true;
+                    _tie = true;
+                }
+            }
+       }
 
-console.log(gameFlow());
+       if (_matchingRow === true && _winner === players.getPlayerX()){
+            _gameOver = true;
+            announceGameOver(_winner);
+       } else if (_matchingRow === true && _winner === players.getPlayerO()){
+            _gameOver = true;
+            announceGameOver(_winner);
+       } 
+    //    else if (_matchingRow === false){
+    //     // TO DO - this isn't working 
+    //         gameBoard.getGameBoard().filter((item) => {
+    //             if (gameBoard.getGameBoard()[item] === ''){
+    //                 _gameOver = false;
+    //             }
+    //             return _gameOver;
+    //         });
+    //    } 
+       return {_winner, _gameOver}; //check this
+    }
+
+    // // takeTurn() first draft
+    function takeTurn(cell){
+        if (gameBoard.checkCell(cell) !== ''){
+            console.log('choose another tile');
+        } else {
+            gameBoard.chooseCell(cell, _token);
+            _activePlayer === players.getPlayerX() ? 
+                _activePlayer = players.getPlayerO() :
+                _activePlayer = players.getPlayerX();
+            checkForGameOver();
+            
+        }
+        console.log(gameBoard.getGameBoard());
+        if (_gameOver === false) announceActivePlayer();
+    }
+
+    
+
+    // function takeTurn(cell, _activePlayer){
+    //     // reworked to pass _activePlayer instead of token2
+    //     if (gameBoard.checkCell(cell) !== ''){
+    //         console.log('choose another tile');
+    //     } else {
+    //         if (_activePlayer === players.getPlayerX()){
+    //             gameBoard.chooseCell(cell, 'x');
+    //             _activePlayer = players.getPlayerO(); 
+    //         } else {
+    //             gameBoard.chooseCell(cell, 'o');
+    //             _activePlayer = players.getPlayerX();
+    //         }
+    //         checkForGameOver();
+    //     }
+    //     console.log(_activePlayer);
+    //     console.log(gameBoard.getGameBoard());
+    // }
+
+    function chooseStartingPlayer(){
+        let num = Math.floor(Math.random() * 2);
+        (num === 0) ? _activePlayer = players.getPlayerX() : _activePlayer = players.getPlayerO();
+        return _activePlayer;
+    }
+
+    // working code
+    function startGame(){
+        gameBoard.resetBoard();
+        chooseStartingPlayer();
+        announceActivePlayer();
+        // takeTurn();
+    }
+
+    return {
+        startGame,
+        takeTurn,
+        checkForGameOver,
+    };
+}());
+
+console.log(gameController.startGame());
+
+// [0, 1, 2]
+// [3, 4, 5]
+// [6, 7, 8]
+
+
+/* ======================================================
+                    TESTING CENTRE
+=========================================================
+*/
+    
+
 
 /* ======================================================
                     PSEUDOCODE
@@ -150,6 +251,7 @@ console.log(gameFlow());
         TOP ROW: 0  1   2
         MID ROW: 3  4   5
         BTM ROW: 6  7   8
+4. create an option to play with computer which generates random cell selections?
 
 
 ___GAMEBOARD_OBJECT___
@@ -175,7 +277,7 @@ DECLARE players factory function IIFE
 END players function
 
 
-___GAME_FLOW_OBJECT___
+___GAME_CONTROLLER_OBJECT___
 DECLARE gameFlow function
     ACCESS gameBoard
     ACCESS playerOne and playerTwo
@@ -189,7 +291,7 @@ DECLARE gameFlow function
         SET array item to token (arrayChoice)
         UPDATE whoseTurn to other player
     END takeTurn
-    DEFINE checkForWin function
+    DEFINE checkForGameOver function
         ACCESS gameBoard
         IF (top row OR mid row OR btm row OR 
             left col OR mid col OR rgt col OR
@@ -200,13 +302,12 @@ DECLARE gameFlow function
             SET gameOver to true
             RETURN tie
         ELSE gameOver remains false
-    END checkForWin
+    END checkForGameOver
     DEFINE playRound function
         SEQUENCE
             INVOKE takeTurn
-            INVOKE checkForWin
+            INVOKE checkForGameOver
         END SEQUENCE
     END playRound
 END gameFlow
-
 */
