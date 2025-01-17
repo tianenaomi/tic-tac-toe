@@ -1,5 +1,6 @@
 let gameBoard = (function(){
-    let _gameBoard = ["", "", "", "", "", "", "", "", ""];
+    // let _gameBoard = ["", "", "", "", "", "", "", "", ""];
+    let _gameBoard = ["x", "o", "x", "o", "x", "o", "", "", ""];
     return {
         checkCell: function(cell){
             return _gameBoard[cell];
@@ -75,22 +76,28 @@ let gameController = (function(){
     function announceActivePlayer(){
         if (_activePlayer === players.getPlayerX()) {
             _token = 'x';
-            console.log("It's Player X's turn");
+            return _activePlayer = "It's Player X's turn";
         } else {
             _token = 'o';
-            console.log("It's Player O's turn");
+            return _activePlayer = "It's Player O's turn";
         };
     }
 
-    function announceGameOver(_winner, _tie){
-        console.log('GAME OVER');
-        if (_tie === true) {
-            console.log(`Oh cool, a tie`);
-        } else {
-            (_winner === players.getPlayerX()) ?
-                console.log(`Player X wins!`) :
-                console.log(`Player O wins!`)
+    function announceGameOver(_gameOver){
+        if (_gameOver === true){
+            return _gameOver = 'GAME OVER';
         }
+    }
+
+    function announceWinner(_winner){
+        if (_winner === players.getPlayerX()){
+            return _winner = `Player X wins!`
+        } else 
+            return _winner = `Player O wins!`;
+    }
+
+    function announceTie(_tie){
+        return _tie = `Oh cool, a tie`;
     }
 
     function checkForMatches(array){
@@ -121,16 +128,19 @@ let gameController = (function(){
 
        if (_matchingRow === true && _winner === players.getPlayerX()){
             _gameOver = true;
-            announceGameOver(_winner, _tie);
+            announceGameOver(_gameOver);
+            announceWinner(_winner);
        } else if (_matchingRow === true && _winner === players.getPlayerO()){
             _gameOver = true;
-            announceGameOver(_winner, _tie);
+            announceGameOver(_gameOver);
+            announceActivePlayer(_winner);
        } else if (_matchingRow === false){
             let emptyCell = gameBoard.getGameBoard().includes('');
             if (emptyCell === false){
                 _gameOver = true;
                 _tie = true;
-                announceGameOver(_winner, _tie);
+                announceGameOver(_gameOver);
+                announceTie(_tie);
             }
        } 
     }
@@ -165,14 +175,86 @@ let gameController = (function(){
     startGame();
 
     return {
+        announceActivePlayer,
+        announceGameOver,
+        announceTie,
         startGame,
         takeTurn,
         checkForGameOver,
     };
 }());
 
+let screenController = (function(){
+    let _activePlayerDisp = document.createElement('div');
+    let _board = document.createElement('div');
+    let _cells = [];
+    let _messageDisp = document.createElement('div');
+    let _page = document.querySelector('body');
+    let _newGame = document.createElement('button')
+
+
+    _newGame.textContent = 'New Game';
+    _newGame.addEventListener('click', () => gameController.startGame());
+
+    _page.appendChild(_activePlayerDisp);
+    _page.appendChild(_messageDisp);
+    _page.appendChild(_newGame);
+    _page.appendChild(_board);
+
+    updateActivePlayerDisp();
+
+    function updateActivePlayerDisp(){
+        _activePlayerDisp.textContent = gameController.announceActivePlayer();
+    }
+
+    function createGameBoardDisp(){
+        for (i = 0; i < gameBoard.getGameBoard().length; i++){
+            _cells[i]= document.createElement('button');
+            _cells[i].textContent = gameBoard.getGameBoard()[i];    
+            
+            
+            // last
+            _board.appendChild(_cells[i]);
+        }
+        return gameBoard.getGameBoard();
+    }
+    createGameBoardDisp();
+
+    for (i = 0; i < _cells.length; i++){
+        _cells[i].addEventListener('click', () => {
+
+            // this always passes i=9
+            gameController.takeTurn(i);
+            _cells[i].textContent = gameBoard.getGameBoard()[i];
+            updateActivePlayerDisp();
+            
+        });
+    }
+
+    function updateGameBoardDisp(){
+
+    }
+
+
+
+    function updateMessageDisp(){
+
+    }
+    
+}());
+
 /* ======================================================
                     TESTING CENTRE
 =========================================================
+What things do I need to be able to see?
+1. gameBoard
+    div
+2. buttons in gameBoard
+    array loop to create buttons
+3. who's turn it is
+    div or p
+4. winner announcement
+    div or p
+5. button to restart game
 
 */
