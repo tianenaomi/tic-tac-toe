@@ -1,6 +1,5 @@
 let gameBoard = (function(){
-    // let _gameBoard = ["", "", "", "", "", "", "", "", ""];
-    let _gameBoard = ["x", "o", "x", "o", "x", "o", "", "", ""];
+    let _gameBoard = ["", "", "", "", "", "", "", "", ""];
     return {
         checkCell: function(cell){
             return _gameBoard[cell];
@@ -69,35 +68,16 @@ let gameController = (function(){
     let _activePlayer;
     let _gameOver = false;
     let _matchingRow = false;
+    let _tileClaimed = false;
     let _tie = false;
     let _token;
     let _winner;
 
-    function announceActivePlayer(){
+    function getToken(){
         if (_activePlayer === players.getPlayerX()) {
-            _token = 'x';
-            return _activePlayer = "It's Player X's turn";
-        } else {
-            _token = 'o';
-            return _activePlayer = "It's Player O's turn";
-        };
-    }
-
-    function announceGameOver(_gameOver){
-        if (_gameOver === true){
-            return _gameOver = 'GAME OVER';
-        }
-    }
-
-    function announceWinner(_winner){
-        if (_winner === players.getPlayerX()){
-            return _winner = `Player X wins!`
-        } else 
-            return _winner = `Player O wins!`;
-    }
-
-    function announceTie(_tie){
-        return _tie = `Oh cool, a tie`;
+            return _token = 'x';
+        } else (_activePlayer === players.getPlayerO())
+            return _token = 'o';
     }
 
     function checkForMatches(array){
@@ -128,35 +108,31 @@ let gameController = (function(){
 
        if (_matchingRow === true && _winner === players.getPlayerX()){
             _gameOver = true;
-            announceGameOver(_gameOver);
-            announceWinner(_winner);
        } else if (_matchingRow === true && _winner === players.getPlayerO()){
             _gameOver = true;
-            announceGameOver(_gameOver);
-            announceActivePlayer(_winner);
        } else if (_matchingRow === false){
             let emptyCell = gameBoard.getGameBoard().includes('');
             if (emptyCell === false){
                 _gameOver = true;
                 _tie = true;
-                announceGameOver(_gameOver);
-                announceTie(_tie);
             }
        } 
     }
 
     function takeTurn(cell){
         if (gameBoard.checkCell(cell) !== ''){
-            console.log('choose another tile');
+            return _tileClaimed = true;
         } else {
+            getToken();
             gameBoard.chooseCell(cell, _token);
-            _activePlayer === players.getPlayerX() ? 
-                _activePlayer = players.getPlayerO() :
-                _activePlayer = players.getPlayerX();
             checkForGameOver(); 
         }
-        console.log(gameBoard.getGameBoard());
-        if (_gameOver === false) announceActivePlayer();
+        
+        if (_gameOver === false){
+            _activePlayer === players.getPlayerX() ? 
+            _activePlayer = players.getPlayerO() :
+            _activePlayer = players.getPlayerX();       
+        }
     }
 
     function chooseStartingPlayer(){
@@ -166,21 +142,38 @@ let gameController = (function(){
     }
 
     function startGame(){
+        _activePlayer = '';
+        _gameOver = false;
+        _matchingRow = false;
+        _message = '';
+        _tie = false;
+        _tileClaimed = '';
+        _token = '';
+        _winner = '';
         gameBoard.resetBoard();
-        console.log(gameBoard.getGameBoard());
         chooseStartingPlayer();
-        announceActivePlayer();
     }
 
     startGame();
 
     return {
-        announceActivePlayer,
-        announceGameOver,
-        announceTie,
+        isGameOver: function(){
+            return _gameOver;
+        },
+        isTie: function(){
+            return _tie;
+        },
+        isWinner: function(){
+            let winner;
+            if (_winner === players.getPlayerX()){
+                return winner = 'Player X';
+            } else {
+                return winner = 'Player O';
+            }
+        },
         startGame,
         takeTurn,
-        checkForGameOver,
+        getToken,
     };
 }());
 
@@ -189,72 +182,70 @@ let screenController = (function(){
     let _board = document.createElement('div');
     let _cells = [];
     let _messageDisp = document.createElement('div');
-    let _page = document.querySelector('body');
+    let _page = document.querySelector('div');
     let _newGame = document.createElement('button')
 
-
     _newGame.textContent = 'New Game';
-    _newGame.addEventListener('click', () => gameController.startGame());
-
     _page.appendChild(_activePlayerDisp);
     _page.appendChild(_messageDisp);
     _page.appendChild(_newGame);
     _page.appendChild(_board);
 
-    updateActivePlayerDisp();
+    // Event Listeners
+    _newGame.addEventListener('click', () => {
+        gameController.startGame();
+        for (let i = 0; i < _cells.length; i++){
+            _cells[i].textContent = '';
+        }
+        _messageDisp.textContent = '';
+        announceActivePlayer();
+    });
+    // END event listeners
 
-    function updateActivePlayerDisp(){
-        _activePlayerDisp.textContent = gameController.announceActivePlayer();
-    }
+    announceActivePlayer();
+    createGameBoardDisp();
 
     function createGameBoardDisp(){
-        for (i = 0; i < gameBoard.getGameBoard().length; i++){
+        for (let i = 0; i < gameBoard.getGameBoard().length; i++){
             _cells[i]= document.createElement('button');
             _cells[i].textContent = gameBoard.getGameBoard()[i];    
-            
-            
-            // last
             _board.appendChild(_cells[i]);
+        }
+        
+        for (let i = 0; i < _cells.length; i++){ //create grid buttons
+            _cells[i].addEventListener('click', () => {
+                gameController.takeTurn(i);
+                _cells[i].textContent = gameBoard.getGameBoard()[i];
+                announceActivePlayer();
+                announceGameOver();
+            });
         }
         return gameBoard.getGameBoard();
     }
-    createGameBoardDisp();
 
-    for (i = 0; i < _cells.length; i++){
-        _cells[i].addEventListener('click', () => {
-
-            // this always passes i=9
-            gameController.takeTurn(i);
-            _cells[i].textContent = gameBoard.getGameBoard()[i];
-            updateActivePlayerDisp();
-            
-        });
+    function announceActivePlayer(){
+        console.log(gameController.getToken())
+        if (gameController.isGameOver() === false){
+            if (gameController.getToken() === 'x'){
+                _activePlayerDisp.textContent = "it's Player X's turn";
+            } else {
+                _activePlayerDisp.textContent = "it's Player O's turn";
+            }
+        }
     }
 
-    function updateGameBoardDisp(){
-
+    function announceGameOver(){
+        if (gameController.isGameOver() === true){
+            _messageDisp.textContent = 'GAME OVER';
+            announceWinner();
+        }
     }
 
-
-
-    function updateMessageDisp(){
-
+    function announceWinner(){
+        if (gameController.isTie() === true){
+            _activePlayerDisp.textContent = `Womp womp, it's a tie...`;
+        } else {
+            _activePlayerDisp.textContent = `${gameController.isWinner()} wins!`;
+        }   
     }
-    
 }());
-
-/* ======================================================
-                    TESTING CENTRE
-=========================================================
-What things do I need to be able to see?
-1. gameBoard
-    div
-2. buttons in gameBoard
-    array loop to create buttons
-3. who's turn it is
-    div or p
-4. winner announcement
-    div or p
-5. button to restart game
-
-*/
