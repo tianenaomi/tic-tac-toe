@@ -1,0 +1,12 @@
+#container > :last-child{
+    border: 2px solid blue;
+    display: grid;
+    height: min-content;
+    grid-template-columns: 1fr 1fr 1fr;
+    width: min-content;
+}
+
+#container > :last-child button {
+    height: 50px;
+    width: 50px;
+}
